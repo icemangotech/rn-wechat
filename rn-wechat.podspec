@@ -13,7 +13,7 @@ Pod::Spec.new do |s|
   s.license    = { :type => "BSD-3-Clause", :file => "LICENSE" }
   s.authors      = { "phecda" => "phecda@brae.co" }
   s.platforms    = { :ios => "9.0" }
-  s.source       = { :git => "https://github.com/icemangotech/rn-wechat.git", :tag => "#{s.version}" }
+  s.source       = { :git => "https://github.com/icemangotech/rn-wechat.git", :tag => "v#{s.version}" }
 
   s.source_files = "ios/**/*.{h,m,swift}"
   s.requires_arc = true
