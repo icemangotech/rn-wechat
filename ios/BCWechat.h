@@ -3,12 +3,22 @@
 #import <React/RCTLinkingManager.h>
 #import <React/RCTImageLoaderProtocol.h>
 #import "WXApi.h"
+#import "WXApiObject.h"
+
+typedef NS_ENUM(NSInteger, WXShareType) {
+    WXShareTypeText        = 0,
+    WXShareTypeImage       = 1,
+    WXShareTypeMusic       = 2,
+    WXShareTypeVideo       = 3,
+    WXShareTypeWeb         = 4,
+    WXShareTypeMiniProgram = 5,
+};
 
 @interface BCWechat : RCTEventEmitter <RCTBridgeModule, WXApiDelegate>
 
 @property (nullable) NSString* appId;
 
-@property (nullable) RCTPromiseResolveBlock sendResolve;
-@property (nullable) RCTPromiseRejectBlock sendReject;
+@property (nullable) RCTPromiseResolveBlock sendResolveBlock;
+@property (nullable) RCTPromiseRejectBlock sendRejectBlock;
 
 @end
