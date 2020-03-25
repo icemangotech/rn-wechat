@@ -1,17 +1,23 @@
 # rn-wechat
 
-## Getting started
+A react native library of [WechatSDK](https://developers.weixin.qq.com/doc/oplatform/Mobile_App/Resource_Center_Homepage.html), based on [react-native-wechat](https://github.com/yorkie/react-native-wechat).
 
-`$ npm install rn-wechat --save`
+## Info
 
-### Mostly automatic installation
+|                    |   iOS   | Android |
+| :----------------: | :-----: | :-----: |
+|      Version       | 1.8.6.2 |         |
+|       Share        |         |         |
+|        Pay         |         |         |
+|        Auth        |         |         |
+| Launch MiniProgram |         |         |
 
-`$ react-native link rn-wechat`
+## Installation
 
-## Usage
-```javascript
-import BCWechat from 'rn-wechat';
+1. Install with either Yarn or NPM;
 
-// TODO: What to do with the module?
-BCWechat;
-```
+2. For iOS, run `pod install`;
+
+## License
+
+BSD-3-Clause
