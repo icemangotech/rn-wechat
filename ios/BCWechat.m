@@ -7,6 +7,8 @@
 #define NSStringize(x) @NSStringize_helper(x)
 #define BC_READ_ASSIGN(object, key) object.key = data[NSStringize(key)]
 
+static NSString *const kOpenURLNotification = @"RCTOpenURLNotification";
+
 @implementation BCWechat
 
 RCT_EXPORT_MODULE()
@@ -24,23 +26,19 @@ RCT_EXPORT_MODULE()
     }
 }
 
-- (dispatch_queue_t)methodQueue
-{
-    return dispatch_get_main_queue();
-}
-
 + (BOOL)requiresMainQueueSetup
 {
     return NO;
 }
 
-- (void)startObserving
-{
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOpenURL:) name:@"RCTOpenURLNotification" object:nil];
+- (instancetype)init {
+    if (self = [super init]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleOpenURL:) name:kOpenURLNotification object:nil];
+    }
+    return self;
 }
 
-- (void)stopObserving
-{
+- (void)dealloc {
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -61,11 +59,7 @@ RCT_EXPORT_METHOD(registerApp:(NSString*)appId
 
 RCT_EXPORT_METHOD(isWXAppSupportApi:(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
 {
-    if ([WXApi isWXAppSupportApi]) {
-        resolve(nil);
-    } else {
-        reject(nil, nil, nil);
-    }
+    resolve(@([WXApi isWXAppSupportApi]));
 }
 
 RCT_EXPORT_METHOD(getWXAppInstallUrl:(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
@@ -92,7 +86,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     self.sendResolveBlock = resolve;
     self.sendRejectBlock = reject;
 
-    NSString* thumbnailUrl = data[@"thumbnailUrl"];
+    NSString* thumbnailUrl = data[@"thumbUrl"];
 
     if (thumbnailUrl.length) {
         [self loadImageFromURLString:thumbnailUrl completionBlock:^(NSError *error, UIImage *image) {
@@ -105,7 +99,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
 - (void)shareData: (NSDictionary*)data withThumbnail:(UIImage*)thumbnail {
     WXShareType type = [data[@"type"] integerValue];
-    int scene = (int)data[@"scene"];
+    int scene = (int)[data[@"scene"] integerValue];
 
     if (type == WXShareTypeText) {
         [self shareTextMessage:(NSString *)data[@"text"] to:scene];
@@ -120,10 +114,17 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             {
                 NSString* imageUrl = data[@"imageUrl"];
                 [self loadImageFromURLString:imageUrl completionBlock:^(NSError *error, UIImage *image) {
-                    WXImageObject* imageObject = [WXImageObject object];
-                    imageObject.imageData = UIImagePNGRepresentation(image);
-
-                    [self shareMediaMessage:imageObject to:scene];
+                    
+                    if (!image) {
+                        [self rejectSend:nil :@"Image Content Load Fail" :nil];
+                    } else {
+                        WXImageObject* imageObject = [WXImageObject object];
+                        imageObject.imageData = UIImagePNGRepresentation(image);
+                        
+                        message.mediaObject = imageObject;
+                        
+                        [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                    }
                 }];
                 break;
             }
@@ -131,8 +132,10 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             {
                 WXWebpageObject* webpageObject = [WXWebpageObject object];
                 BC_READ_ASSIGN(webpageObject, webpageUrl);
+                
+                message.mediaObject = webpageObject;
 
-                [self shareMediaMessage:webpageObject to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                 break;
             }
             case WXShareTypeMusic:
@@ -142,8 +145,10 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                 BC_READ_ASSIGN(musicObject, musicLowBandUrl);
                 BC_READ_ASSIGN(musicObject, musicDataUrl);
                 BC_READ_ASSIGN(musicObject, musicLowBandDataUrl);
+                
+                message.mediaObject = musicObject;
 
-                [self shareMediaMessage:musicObject to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                 break;
             }
             case WXShareTypeVideo:
@@ -151,8 +156,10 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                 WXVideoObject* videoObject = [WXVideoObject object];
                 BC_READ_ASSIGN(videoObject, videoUrl);
                 BC_READ_ASSIGN(videoObject, videoLowBandUrl);
+                
+                message.mediaObject = videoObject;
 
-                [self shareMediaMessage:videoObject to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                 break;
             }
             case WXShareTypeMiniProgram:
@@ -167,7 +174,9 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                     mpObject.miniProgramType = (int)data[@"miniProgramType"];
                     mpObject.hdImageData = UIImagePNGRepresentation(image);
                     
-                    [self shareMediaMessage:mpObject to:scene];
+                    message.mediaObject = mpObject;
+                    
+                    [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                 }];
                 
                 break;
@@ -188,10 +197,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     [self sendReq:req];
 }
 
-- (void)shareMediaMessage: (id)mediaObject to: (int)scene {
-    WXMediaMessage* message = [WXMediaMessage message];
-
-    message.mediaObject = mediaObject;
+- (void)shareMediaMessage: (WXMediaMessage*)message to: (int)scene {
 
     SendMessageToWXReq* req = [SendMessageToWXReq new];
 
@@ -240,9 +246,30 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
 }
 
-- (void)onResp:(BaseResp *)resp
+- (void)onResp:(BaseResp *)r
 {
+    NSMutableDictionary* result = @{
+        @"errCode": @(r.errCode)
+        // TODO check what is r.type
+    }.mutableCopy;
+    
+    result[@"errStr"] = r.errStr;
+    
+    if ([r isKindOfClass:[SendMessageToWXResp class]]) {
+        SendMessageToWXResp* resp = (SendMessageToWXResp*)r;
+        
+        result[@"lang"] = resp.lang;
+        result[@"country"] = resp.country;
+        
+        [self resolveSend: result];
+    }
+}
 
+#pragma mark - RCTBridgeModule
+
+- (NSArray<NSString *> *)supportedEvents
+{
+  return @[];
 }
 
 @end
