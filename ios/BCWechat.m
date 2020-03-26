@@ -81,6 +81,8 @@ RCT_EXPORT_METHOD(openWXApp:(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBl
     }
 }
 
+#pragma mark - Share
+
 RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
 {
     self.sendResolveBlock = resolve;
@@ -194,7 +196,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     req.scene = scene;
     req.text = text;
 
-    [self sendReq:req];
+    [self sendMessageReq:req];
 }
 
 - (void)shareMediaMessage: (WXMediaMessage*)message to: (int)scene {
@@ -205,10 +207,10 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     req.scene = scene;
     req.message = message;
 
-    [self sendReq:req];
+    [self sendMessageReq:req];
 }
 
-- (void)sendReq: (SendMessageToWXReq*)req {
+- (void)sendMessageReq: (SendMessageToWXReq*)req {
     [WXApi sendReq:req completion:^(BOOL success) {
         if (!success) {
             [self rejectSend:nil :INVOKE_FAILED :nil];
@@ -238,6 +240,27 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     [[self.bridge moduleForName:@"ImageLoader"] loadImageWithURLRequest:imageRequest size:CGSizeMake(100, 100) scale:1 clipped:NO resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil completionBlock:callback];
 }
 
+#pragma mark - Pay
+
+RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
+{
+    PayReq* req = [PayReq new];
+    BC_READ_ASSIGN(req, partnerId);
+    BC_READ_ASSIGN(req, prepayId);
+    BC_READ_ASSIGN(req, nonceStr);
+    BC_READ_ASSIGN(req, package);
+    BC_READ_ASSIGN(req, sign);
+    req.timeStamp = [data[@"timeStamp"] unsignedIntValue];
+    
+    [WXApi sendReq:req completion:^(BOOL success) {
+        if (success) {
+            self.payResolveBlock = resolve;
+        } else {
+            reject(nil, INVOKE_FAILED, nil);
+        }
+    }];
+    
+}
 
 #pragma mark - WXApiDelegate
 
@@ -262,6 +285,16 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
         result[@"country"] = resp.country;
         
         [self resolveSend: result];
+    } else if ([r isKindOfClass:[PayResp class]]) {
+        PayResp* resp = (PayResp*)r;
+        
+        result[@"returnKey"] = resp.returnKey;
+        
+        if (self.payResolveBlock) {
+            self.payResolveBlock(result);
+        }
+        
+        self.payResolveBlock = nil;
     }
 }
 

@@ -21,4 +21,6 @@ typedef NS_ENUM(NSInteger, WXShareType) {
 @property (nullable) RCTPromiseResolveBlock sendResolveBlock;
 @property (nullable) RCTPromiseRejectBlock sendRejectBlock;
 
+@property (nullable) RCTPromiseResolveBlock payResolveBlock;
+
 @end

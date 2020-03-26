@@ -94,6 +94,21 @@ export type WXShareReq =
   | ShareWebReq
   | ShareMiniProgramReq;
 
+export interface WXPayReq {
+  /** 商家向财付通申请的商家id */
+  partnerId: string;
+  /** 预支付订单 */
+  prepayId: string;
+  /** 随机串，防重发 */
+  nonceStr: string;
+  /** 时间戳，防重发 */
+  timeStamp: number;
+  /** 商家根据财付通文档填写的数据和签名 */
+  package: string;
+  /** 商家根据微信开放平台文档对数据做的签名 */
+  sign: string;
+}
+
 export enum WXErrCode {
   /** 成功 */
   WXSuccess = 0,
@@ -117,4 +132,11 @@ export interface WXBaseResp {
 export interface WXShareResp extends WXBaseResp {
   lang?: string;
   country?: string;
+}
+
+export interface WXPayResp extends WXBaseResp {
+  /**
+   * 微信终端返回给第三方的关于支付结果的结构体
+   */
+  returnKey?: string;
 }
