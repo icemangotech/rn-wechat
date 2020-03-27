@@ -26,6 +26,10 @@ export function isWXAppSupportApi(): Promise<boolean> {
   return BCWechat.isWXAppSupportApi();
 }
 
+export function isWXAppInstalled(): Promise<boolean> {
+  return BCWechat.isWXAppInstalled();
+}
+
 export function openWXApp(): Promise<void> {
   return BCWechat.openWXApp();
 }

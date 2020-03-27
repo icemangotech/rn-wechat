@@ -62,6 +62,11 @@ RCT_EXPORT_METHOD(isWXAppSupportApi:(RCTPromiseResolveBlock)resolve :(RCTPromise
     resolve(@([WXApi isWXAppSupportApi]));
 }
 
+RCT_EXPORT_METHOD(isWXAppInstalled:(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
+{
+    resolve(@([WXApi isWXAppInstalled]));
+}
+
 RCT_EXPORT_METHOD(getWXAppInstallUrl:(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
 {
     resolve([WXApi getWXAppInstallUrl]);
