@@ -1,4 +1,4 @@
-import { NativeModules } from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 const { BCWechat } = NativeModules;
 
@@ -11,9 +11,16 @@ import {
 } from './types';
 
 export async function registerApp(appId: string, universalLink: string) {
-  return BCWechat.registerApp(appId, universalLink);
+  if (Platform.OS === 'ios') {
+    return BCWechat.registerApp(appId, universalLink);
+  } else {
+    return BCWechat.registerApp(appId);
+  }
 }
 
+/**
+ * @platform iOS
+ */
 export function getWXAppInstallUrl(): Promise<string> {
   return BCWechat.getWXAppInstallUrl();
 }
@@ -22,8 +29,18 @@ export function getApiVersion(): Promise<string> {
   return BCWechat.getApiVersion();
 }
 
+/**
+ * @platform iOS
+ */
 export function isWXAppSupportApi(): Promise<boolean> {
   return BCWechat.isWXAppSupportApi();
+}
+
+/**
+ * @platform Android
+ */
+export function getWXAppSupportAPI(): Promise<number> {
+  return BCWechat.getWXAppSupportAPI();
 }
 
 export function isWXAppInstalled(): Promise<boolean> {
