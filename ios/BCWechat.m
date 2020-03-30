@@ -121,15 +121,15 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             {
                 NSString* imageUrl = data[@"imageUrl"];
                 [self loadImageFromURLString:imageUrl completionBlock:^(NSError *error, UIImage *image) {
-                    
+
                     if (!image) {
                         [self rejectSend:nil :@"Image Content Load Fail" :nil];
                     } else {
                         WXImageObject* imageObject = [WXImageObject object];
                         imageObject.imageData = UIImagePNGRepresentation(image);
-                        
+
                         message.mediaObject = imageObject;
-                        
+
                         [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                     }
                 }];
@@ -139,7 +139,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             {
                 WXWebpageObject* webpageObject = [WXWebpageObject object];
                 BC_READ_ASSIGN(webpageObject, webpageUrl);
-                
+
                 message.mediaObject = webpageObject;
 
                 [self shareMediaMessage: (WXMediaMessage*)message to:scene];
@@ -152,7 +152,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                 BC_READ_ASSIGN(musicObject, musicLowBandUrl);
                 BC_READ_ASSIGN(musicObject, musicDataUrl);
                 BC_READ_ASSIGN(musicObject, musicLowBandDataUrl);
-                
+
                 message.mediaObject = musicObject;
 
                 [self shareMediaMessage: (WXMediaMessage*)message to:scene];
@@ -163,7 +163,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                 WXVideoObject* videoObject = [WXVideoObject object];
                 BC_READ_ASSIGN(videoObject, videoUrl);
                 BC_READ_ASSIGN(videoObject, videoLowBandUrl);
-                
+
                 message.mediaObject = videoObject;
 
                 [self shareMediaMessage: (WXMediaMessage*)message to:scene];
@@ -180,12 +180,12 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                     BC_READ_ASSIGN(mpObject, withShareTicket);
                     mpObject.miniProgramType = [data[@"miniProgramType"] unsignedIntegerValue];
                     mpObject.hdImageData = UIImagePNGRepresentation(image);
-                    
+
                     message.mediaObject = mpObject;
-                    
+
                     [self shareMediaMessage: (WXMediaMessage*)message to:scene];
                 }];
-                
+
                 break;
             }
             default:
@@ -256,7 +256,7 @@ RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RC
     BC_READ_ASSIGN(req, package);
     BC_READ_ASSIGN(req, sign);
     req.timeStamp = [data[@"timeStamp"] unsignedIntValue];
-    
+
     [WXApi sendReq:req completion:^(BOOL success) {
         if (success) {
             self.payResolveBlock = resolve;
@@ -264,20 +264,42 @@ RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RC
             reject(nil, INVOKE_FAILED, nil);
         }
     }];
-    
+
 }
 
 #pragma mark - Launch MiniProgram
 
-RCT_EXPORT_METHOD(launchMiniProgram: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject) {
+RCT_EXPORT_METHOD(launchMiniProgram: (NSDictionary*)data
+                  :(RCTPromiseResolveBlock)resolve
+                  :(RCTPromiseRejectBlock)reject)
+{
     WXLaunchMiniProgramReq* req = [WXLaunchMiniProgramReq new];
     BC_READ_ASSIGN(req, userName);
     BC_READ_ASSIGN(req, path);
     req.miniProgramType = [data[@"miniProgramType"] unsignedIntegerValue];
-    
+
     [WXApi sendReq:req completion:^(BOOL success) {
         if (success) {
             self.launchResolveBlock = resolve;
+        } else {
+            reject(nil, INVOKE_FAILED, nil);
+        }
+    }];
+}
+
+#pragma mark - Send Auth Request
+
+RCT_EXPORT_METHOD(sendAuthRequest: (NSDictionary*)data
+                  :(RCTPromiseResolveBlock)resolve
+                  :(RCTPromiseRejectBlock)reject)
+{
+    SendAuthReq* req = [SendAuthReq new];
+    BC_READ_ASSIGN(req, state);
+    BC_READ_ASSIGN(req, scope);
+
+    [WXApi sendReq:req completion:^(BOOL success) {
+        if (success) {
+            self.sendAuthResolveBlock = resolve;
         } else {
             reject(nil, INVOKE_FAILED, nil);
         }
@@ -297,36 +319,47 @@ RCT_EXPORT_METHOD(launchMiniProgram: (NSDictionary*)data :(RCTPromiseResolveBloc
         @"errCode": @(r.errCode)
         // TODO check what is r.type
     }.mutableCopy;
-    
+
     result[@"errStr"] = r.errStr;
-    
+
     if ([r isKindOfClass:[SendMessageToWXResp class]]) {
         SendMessageToWXResp* resp = (SendMessageToWXResp*)r;
-        
+
         result[@"lang"] = resp.lang;
         result[@"country"] = resp.country;
-        
+
         [self resolveSend: result];
     } else if ([r isKindOfClass:[PayResp class]]) {
         PayResp* resp = (PayResp*)r;
-        
+
         result[@"returnKey"] = resp.returnKey;
-        
+
         if (self.payResolveBlock) {
             self.payResolveBlock(result);
         }
-        
+
         self.payResolveBlock = nil;
     } else if ([r isKindOfClass:[WXLaunchMiniProgramResp class]]) {
         WXLaunchMiniProgramResp* resp = (WXLaunchMiniProgramResp*)r;
-        
+
         result[@"extMsg"] = resp.extMsg;
-        
+
         if (self.launchResolveBlock) {
             self.launchResolveBlock(result);
         }
-        
+
         self.launchResolveBlock = nil;
+    } else if ([r isKindOfClass:[SendAuthResp class]]) {
+        SendAuthResp* resp = (SendAuthResp*)r;
+
+        result[@"code"] = resp.code;
+        result[@"state"] = resp.state;
+        result[@"lang"] = resp.lang;
+        result[@"country"] = resp.country;
+
+        if (self.sendAuthResolveBlock) {
+            self.sendAuthResolveBlock(result);
+        }
     }
 }
 

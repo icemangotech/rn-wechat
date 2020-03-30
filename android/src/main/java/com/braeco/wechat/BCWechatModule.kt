@@ -32,12 +32,14 @@ import kotlin.collections.ArrayList
 class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext), IWXAPIEventHandler {
   private val INVOKE_FAILED = "registerApp required."
   private val NOT_REGISTERED = "WeChat API invoke returns false."
+  private val INVALID_ARGUMENT = "invalid argument."
 
   private var mAppId: String? = null
   private var mWXApi: IWXAPI? = null
   private var mSendMessagePromise: Promise? = null
   private var mPayPromise: Promise? = null
   private var mLaunchMini: Promise? = null
+  private var mAuthPromise: Promise? = null
 
   companion object {
     @JvmStatic
@@ -184,13 +186,30 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     }
   }
 
+  @ReactMethod
+  fun sendAuthRequest(data: ReadableMap, promise: Promise) {
+    val req = SendAuth.Req()
+
+    req.scope = extractString(data, "scope")
+    req.state = extractString(data, "state")
+
+    val errMsg = sendRequest(req)
+    if (errMsg == null) {
+      mAuthPromise = promise
+    } else {
+      promise.reject("", errMsg)
+    }
+  }
+
   private fun sendRequest(req: BaseReq): String? {
     val api = mWXApi
-    return if (api != null) {
+    return if (!req.checkArgs()) {
+      INVALID_ARGUMENT
+    } else if (api == null) {
+      NOT_REGISTERED
+    } else {
       val success = api.sendReq(req)
       if (success) null else INVOKE_FAILED
-    } else {
-      NOT_REGISTERED
     }
   }
 
@@ -382,6 +401,18 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
         val launchResp = baseResp as WXLaunchMiniProgram.Resp
         map.putString("extMsg", launchResp.extMsg)
         mLaunchMini?.resolve(map)
+      }
+      ConstantsAPI.COMMAND_SENDAUTH -> {
+        val sendAuthResp = baseResp as SendAuth.Resp
+        map.putString("code", sendAuthResp.code)
+        map.putString("country", sendAuthResp.country)
+        map.putString("lang", sendAuthResp.lang)
+        map.putString("state", sendAuthResp.state)
+        map.putString("url", sendAuthResp.url)
+        map.putBoolean("authResult", sendAuthResp.authResult)
+      }
+      else -> {
+        TODO("check type")
       }
     }
   }

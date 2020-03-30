@@ -115,6 +115,19 @@ export interface WXLaunchMiniProgramReq {
   miniProgramType: WXMiniProgramType;
 }
 
+export interface WXSendAuthReq {
+  /**
+   * 外部应用请求的权限范围
+   * **注意：限制长度不超过1KB**
+   */
+  scope: string;
+  /**
+   * 外部应用本身用来标识其请求的唯一性，验证完成后，将由微信终端回传
+   * **注意：限制长度不超过1KB**
+   */
+  state: string;
+}
+
 export enum WXErrCode {
   /** 成功 */
   WXSuccess = 0,
@@ -163,4 +176,26 @@ export interface WXPayResp extends WXBaseResp {
 
 export interface WXLaunchMiniProgramResp extends WXBaseResp {
   extMsg?: string;
+}
+
+export interface WXSendAuthResp extends WXBaseResp {
+  /**
+   * 授权的code，授权失败时返回null
+   */
+  code?: string;
+  /**
+   * @see {@link WXSendAuthReq}
+   */
+  state?: string;
+  lang?: string;
+  country?: string;
+  /**
+   * 只用在 scope:[snsapi_wxaapp_info], 授权成功为true, 否则为false
+   * @platform Android
+   */
+  authResult?: boolean;
+  /**
+   * @platform Android
+   */
+  url?: string;
 }

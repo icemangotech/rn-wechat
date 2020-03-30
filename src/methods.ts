@@ -11,6 +11,8 @@ import {
   WXLaunchMiniProgramReq,
   WXLaunchMiniProgramResp,
   WXBaseResp,
+  WXSendAuthReq,
+  WXSendAuthResp,
 } from './types';
 
 export async function registerApp(appId: string, universalLink: string) {
@@ -97,3 +99,7 @@ export const launchMiniProgram = generateFunction<
   WXLaunchMiniProgramReq,
   WXLaunchMiniProgramResp
 >('launchMiniProgram');
+
+export const sendAuthRequest = generateFunction<WXSendAuthReq, WXSendAuthResp>(
+  'sendAuthRequest'
+);
