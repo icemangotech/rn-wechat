@@ -133,7 +133,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     }
     val thumbUrl = if (data.hasKey("thumbUrl")) extractString(data, "thumbUrl") else ""
     if (thumbUrl?.isNotEmpty() == true) {
-      loadImage(thumbUrl) {
+      loadImage(thumbUrl, true) {
         shareData(data, it, promise)
       }
     } else {
@@ -157,7 +157,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
       }
       WXShareType.WXShareTypeImage -> {
         val imageUrl = extractString(data, "imageUrl")
-        loadImage(imageUrl) {
+        loadImage(imageUrl, false) {
           val imageObject = WXImageObject(it)
           shareData(data, thumb, imageObject, promise)
         }
@@ -223,14 +223,18 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
 
     val api = mWXApi
     if (api != null) {
-      mSendMessagePromise = promise
-      api.sendReq(req)
+      val result = api.sendReq(req)
+      if (!result) {
+        promise.reject("", INVOKE_FAILED)
+      } else {
+        mSendMessagePromise = promise
+      }
     } else {
       promise.reject("", NOT_REGISTERED)
     }
   }
 
-  private fun loadImage(url: String?, completionCallback: (Bitmap?) -> Unit) {
+  private fun loadImage(url: String?, shouldDownSample: Boolean, completionCallback: (Bitmap?) -> Unit) {
     var imageUri: Uri?
     try {
       imageUri = Uri.parse(url)
@@ -243,7 +247,8 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     }
 
     if (imageUri != null) {
-      getImage(imageUri, ResizeOptions(2048, 2048)) {
+      val resizeOptions = if (shouldDownSample) ResizeOptions(100, 100) else null
+      getImage(imageUri, resizeOptions) {
         completionCallback(it)
       }
     } else {
@@ -251,7 +256,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     }
   }
 
-  private fun getImage(uri: Uri, resizeOptions: ResizeOptions, completionCallback: (Bitmap?) -> Unit) {
+  private fun getImage(uri: Uri, resizeOptions: ResizeOptions?, completionCallback: (Bitmap?) -> Unit) {
     val dataSubscriber = object : BaseBitmapDataSubscriber() {
       override fun onFailureImpl(dataSource: DataSource<CloseableReference<CloseableImage>>?) {
         completionCallback(null)
