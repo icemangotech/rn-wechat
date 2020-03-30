@@ -19,6 +19,8 @@ import com.tencent.mm.opensdk.constants.ConstantsAPI
 import com.tencent.mm.opensdk.modelbase.BaseReq
 import com.tencent.mm.opensdk.modelbase.BaseResp
 import com.tencent.mm.opensdk.modelmsg.*
+import com.tencent.mm.opensdk.modelpay.PayReq
+import com.tencent.mm.opensdk.modelpay.PayResp
 import com.tencent.mm.opensdk.openapi.IWXAPI
 import com.tencent.mm.opensdk.openapi.IWXAPIEventHandler
 import com.tencent.mm.opensdk.openapi.WXAPIFactory
@@ -33,6 +35,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
   private var mAppId: String? = null
   private var mWXApi: IWXAPI? = null
   private var mSendMessagePromise: Promise? = null
+  private var mPayPromise: Promise? = null
 
   companion object {
     @JvmStatic
@@ -138,6 +141,32 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
       }
     } else {
       shareData(data, null, promise)
+    }
+  }
+
+  @ReactMethod
+  fun pay(data: ReadableMap, promise: Promise) {
+    val payReq = PayReq()
+    payReq.appId = mAppId
+
+    payReq.partnerId = extractString(data, "partnerId")
+    payReq.prepayId = extractString(data, "prepayId")
+    payReq.nonceStr = extractString(data, "nonceStr")
+    payReq.timeStamp = extractString(data, "timeStamp")
+    payReq.packageValue = extractString(data, "package")
+    payReq.sign = extractString(data, "sign")
+    payReq.extData = extractString(data, "extData")
+
+    val api = mWXApi
+    if (api != null) {
+      val success = api.sendReq(payReq)
+      if (success) {
+        mPayPromise = promise
+      } else {
+        promise.reject("", INVOKE_FAILED)
+      }
+    } else {
+      promise.reject("", NOT_REGISTERED)
     }
   }
 
@@ -320,8 +349,17 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     map.putString("transaction", baseResp.transaction)
     map.putInt("type", baseResp.type)
 
-    if (baseResp.type == ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX) {
-      mSendMessagePromise?.resolve(map)
+    when(baseResp.type) {
+      ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX -> {
+        mSendMessagePromise?.resolve(map)
+      }
+      ConstantsAPI.COMMAND_PAY_BY_WX -> {
+        val payResp = baseResp as PayResp
+        map.putString("returnKey", payResp.returnKey)
+        map.putString("prepayId", payResp.prepayId)
+        map.putString("extData", payResp.extData)
+        mPayPromise?.resolve(map)
+      }
     }
   }
 
