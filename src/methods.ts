@@ -8,6 +8,9 @@ import {
   WXErrCode,
   WXPayReq,
   WXPayResp,
+  WXLaunchMiniProgramReq,
+  WXLaunchMiniProgramResp,
+  WXBaseResp,
 } from './types';
 
 export async function registerApp(appId: string, universalLink: string) {
@@ -51,18 +54,46 @@ export function openWXApp(): Promise<void> {
   return BCWechat.openWXApp();
 }
 
-export async function shareMessage(request: WXShareReq) {
-  let result: WXShareResp = await BCWechat.shareData(request);
-  if (result.errCode !== WXErrCode.WXSuccess) {
-    throw Error(result.errStr ?? result.errCode.toString());
-  }
-  return result;
+function generateFunction<Req, Resp extends WXBaseResp>(
+  nativeMethodName: string
+) {
+  return async function (request: Req) {
+    const nativeMethod: undefined | ((r: Req) => Promise<Resp>) =
+      BCWechat[nativeMethodName];
+    if (nativeMethod) {
+      let result = await nativeMethod(request);
+      if (result.errCode !== WXErrCode.WXSuccess) {
+        throw new WechatError(result);
+      }
+      return result;
+    } else {
+      throw Error(`Native Method ${nativeMethodName} not found`);
+    }
+  };
 }
 
-export async function pay(request: WXPayReq) {
-  let result: WXPayResp = await BCWechat.pay(request);
-  if (result.errCode !== WXErrCode.WXSuccess) {
-    throw Error(result.errStr ?? result.errCode.toString());
+/**
+ * promises will reject with this error when API call finish with an errCode other than zero.
+ */
+export class WechatError extends Error {
+  code: number;
+  constructor(resp: WXBaseResp) {
+    const message = resp.errStr || resp.errCode.toString();
+    super(message);
+    this.name = 'WechatError';
+    this.code = resp.errCode;
+
+    Object.setPrototypeOf(this, WechatError.prototype);
   }
-  return result;
 }
+
+export const shareMessage = generateFunction<WXShareReq, WXShareResp>(
+  'shareData'
+);
+
+export const pay = generateFunction<WXPayReq, WXPayResp>('pay');
+
+export const launchMiniProgram = generateFunction<
+  WXLaunchMiniProgramReq,
+  WXLaunchMiniProgramResp
+>('launchMiniProgram');

@@ -109,6 +109,12 @@ export interface WXPayReq {
   sign: string;
 }
 
+export interface WXLaunchMiniProgramReq {
+  userName: string;
+  path?: string;
+  miniProgramType: WXMiniProgramType;
+}
+
 export enum WXErrCode {
   /** 成功 */
   WXSuccess = 0,
@@ -127,10 +133,24 @@ export enum WXErrCode {
 export interface WXBaseResp {
   errCode: WXErrCode;
   errStr?: string;
+  /**
+   * @platform Android
+   */
+  openId?: string;
+  /**
+   * @platform Android
+   */
+  transaction?: string;
 }
 
 export interface WXShareResp extends WXBaseResp {
+  /**
+   * @platform iOS
+   */
   lang?: string;
+  /**
+   * @platform iOS
+   */
   country?: string;
 }
 
@@ -139,4 +159,8 @@ export interface WXPayResp extends WXBaseResp {
    * 微信终端返回给第三方的关于支付结果的结构体
    */
   returnKey?: string;
+}
+
+export interface WXLaunchMiniProgramResp extends WXBaseResp {
+  extMsg?: string;
 }

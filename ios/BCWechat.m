@@ -178,7 +178,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
                     BC_READ_ASSIGN(mpObject, userName);
                     BC_READ_ASSIGN(mpObject, path);
                     BC_READ_ASSIGN(mpObject, withShareTicket);
-                    mpObject.miniProgramType = (int)data[@"miniProgramType"];
+                    mpObject.miniProgramType = [data[@"miniProgramType"] unsignedIntegerValue];
                     mpObject.hdImageData = UIImagePNGRepresentation(image);
                     
                     message.mediaObject = mpObject;
@@ -267,6 +267,23 @@ RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RC
     
 }
 
+#pragma mark - Launch MiniProgram
+
+RCT_EXPORT_METHOD(launchMiniProgram: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject) {
+    WXLaunchMiniProgramReq* req = [WXLaunchMiniProgramReq new];
+    BC_READ_ASSIGN(req, userName);
+    BC_READ_ASSIGN(req, path);
+    req.miniProgramType = [data[@"miniProgramType"] unsignedIntegerValue];
+    
+    [WXApi sendReq:req completion:^(BOOL success) {
+        if (success) {
+            self.launchResolveBlock = resolve;
+        } else {
+            reject(nil, INVOKE_FAILED, nil);
+        }
+    }];
+}
+
 #pragma mark - WXApiDelegate
 
 - (void)onReq:(BaseReq *)req
@@ -300,6 +317,16 @@ RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RC
         }
         
         self.payResolveBlock = nil;
+    } else if ([r isKindOfClass:[WXLaunchMiniProgramResp class]]) {
+        WXLaunchMiniProgramResp* resp = (WXLaunchMiniProgramResp*)r;
+        
+        result[@"extMsg"] = resp.extMsg;
+        
+        if (self.launchResolveBlock) {
+            self.launchResolveBlock(result);
+        }
+        
+        self.launchResolveBlock = nil;
     }
 }
 

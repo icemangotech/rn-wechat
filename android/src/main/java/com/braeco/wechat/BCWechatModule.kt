@@ -18,6 +18,7 @@ import com.tencent.mm.opensdk.constants.Build
 import com.tencent.mm.opensdk.constants.ConstantsAPI
 import com.tencent.mm.opensdk.modelbase.BaseReq
 import com.tencent.mm.opensdk.modelbase.BaseResp
+import com.tencent.mm.opensdk.modelbiz.WXLaunchMiniProgram
 import com.tencent.mm.opensdk.modelmsg.*
 import com.tencent.mm.opensdk.modelpay.PayReq
 import com.tencent.mm.opensdk.modelpay.PayResp
@@ -36,6 +37,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
   private var mWXApi: IWXAPI? = null
   private var mSendMessagePromise: Promise? = null
   private var mPayPromise: Promise? = null
+  private var mLaunchMini: Promise? = null
 
   companion object {
     @JvmStatic
@@ -157,16 +159,38 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     payReq.sign = extractString(data, "sign")
     payReq.extData = extractString(data, "extData")
 
-    val api = mWXApi
-    if (api != null) {
-      val success = api.sendReq(payReq)
-      if (success) {
-        mPayPromise = promise
-      } else {
-        promise.reject("", INVOKE_FAILED)
-      }
+
+    val errMsg = sendRequest(payReq)
+    if (errMsg == null) {
+      mPayPromise = promise
     } else {
-      promise.reject("", NOT_REGISTERED)
+      promise.reject("", errMsg)
+    }
+  }
+
+  @ReactMethod
+  fun launchMiniProgram(data: ReadableMap, promise: Promise) {
+    val req = WXLaunchMiniProgram.Req()
+
+    req.userName = extractString(data, "userName")
+    req.path = extractString(data, "path")
+    req.miniprogramType = data.getInt("miniProgramType")
+
+    val errMsg = sendRequest(req)
+    if (errMsg == null) {
+      mLaunchMini = promise
+    } else {
+      promise.reject("", errMsg)
+    }
+  }
+
+  private fun sendRequest(req: BaseReq): String? {
+    val api = mWXApi
+    return if (api != null) {
+      val success = api.sendReq(req)
+      if (success) null else INVOKE_FAILED
+    } else {
+      NOT_REGISTERED
     }
   }
 
@@ -250,16 +274,11 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     req.scene = data.getInt("scene")
     req.transaction = UUID.randomUUID().toString()
 
-    val api = mWXApi
-    if (api != null) {
-      val result = api.sendReq(req)
-      if (!result) {
-        promise.reject("", INVOKE_FAILED)
-      } else {
-        mSendMessagePromise = promise
-      }
+    val errMsg = sendRequest(req)
+    if (errMsg == null) {
+      mSendMessagePromise = promise
     } else {
-      promise.reject("", NOT_REGISTERED)
+      promise.reject("", errMsg)
     }
   }
 
@@ -347,7 +366,6 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     map.putString("errStr", baseResp.errStr)
     map.putString("openId", baseResp.openId)
     map.putString("transaction", baseResp.transaction)
-    map.putInt("type", baseResp.type)
 
     when(baseResp.type) {
       ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX -> {
@@ -359,6 +377,11 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
         map.putString("prepayId", payResp.prepayId)
         map.putString("extData", payResp.extData)
         mPayPromise?.resolve(map)
+      }
+      ConstantsAPI.COMMAND_LAUNCH_WX_MINIPROGRAM -> {
+        val launchResp = baseResp as WXLaunchMiniProgram.Resp
+        map.putString("extMsg", launchResp.extMsg)
+        mLaunchMini?.resolve(map)
       }
     }
   }

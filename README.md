@@ -7,10 +7,10 @@ A react native library of [WechatSDK](https://developers.weixin.qq.com/doc/oplat
 |                    |   iOS   | Android |
 | :----------------: | :-----: | :-----: |
 |      Version       | 1.8.6.2 |  5.5.8  |
-|       Share        |    ✅    |         |
-|        Pay         |    ✅    |         |
+|       Share        |    ✅    |    ✅    |
+|        Pay         |    ✅    |    ✅    |
 |        Auth        |         |         |
-| Launch MiniProgram |         |         |
+| Launch MiniProgram |    ✅    |    ✅    |
 
 ## Installation
 
