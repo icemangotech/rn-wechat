@@ -153,6 +153,9 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     val payReq = PayReq()
     payReq.appId = mAppId
 
+    payReq.transaction = extractString(data, "transaction")
+    payReq.openId = extractString(data, "openId")
+
     payReq.partnerId = extractString(data, "partnerId")
     payReq.prepayId = extractString(data, "prepayId")
     payReq.nonceStr = extractString(data, "nonceStr")
@@ -173,6 +176,9 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
   @ReactMethod
   fun launchMiniProgram(data: ReadableMap, promise: Promise) {
     val req = WXLaunchMiniProgram.Req()
+    
+    req.transaction = extractString(data, "transaction")
+    req.openId = extractString(data, "openId")
 
     req.userName = extractString(data, "userName")
     req.path = extractString(data, "path")
@@ -189,6 +195,9 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
   @ReactMethod
   fun sendAuthRequest(data: ReadableMap, promise: Promise) {
     val req = SendAuth.Req()
+
+    req.transaction = extractString(data, "transaction")
+    req.openId = extractString(data, "openId")
 
     req.scope = extractString(data, "scope")
     req.state = extractString(data, "state")
@@ -289,9 +298,13 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     message.description = extractString(data, "description")
 
     val req = SendMessageToWX.Req()
+
+    req.transaction = extractString(data, "transaction")
+    req.openId = extractString(data, "openId")
+
     req.message = message
     req.scene = data.getInt("scene")
-    req.transaction = UUID.randomUUID().toString()
+    req.userOpenId = extractString(data, "userOpenId")
 
     val errMsg = sendRequest(req)
     if (errMsg == null) {
@@ -388,6 +401,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
 
     when(baseResp.type) {
       ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX -> {
+        val a: SendMessageToWX.Resp
         mSendMessagePromise?.resolve(map)
       }
       ConstantsAPI.COMMAND_PAY_BY_WX -> {

@@ -107,9 +107,10 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 - (void)shareData: (NSDictionary*)data withThumbnail:(UIImage*)thumbnail {
     WXShareType type = [data[@"type"] integerValue];
     int scene = (int)[data[@"scene"] integerValue];
+    NSString* user = data[@"userOpenId"];
 
     if (type == WXShareTypeText) {
-        [self shareTextMessage:(NSString *)data[@"text"] to:scene];
+        [self shareTextMessage:(NSString *)data[@"text"] atScene:scene toUser: user];
     } else {
         WXMediaMessage* message = [WXMediaMessage message];
         BC_READ_ASSIGN(message, title);
@@ -130,7 +131,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
                         message.mediaObject = imageObject;
 
-                        [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                        [self shareMediaMessage: (WXMediaMessage*)message atScene:scene toUser: user];
                     }
                 }];
                 break;
@@ -142,7 +143,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
                 message.mediaObject = webpageObject;
 
-                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message atScene:scene toUser: user];
                 break;
             }
             case WXShareTypeMusic:
@@ -155,7 +156,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
                 message.mediaObject = musicObject;
 
-                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message atScene:scene toUser: user];
                 break;
             }
             case WXShareTypeVideo:
@@ -166,7 +167,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
                 message.mediaObject = videoObject;
 
-                [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                [self shareMediaMessage: (WXMediaMessage*)message atScene:scene toUser: user];
                 break;
             }
             case WXShareTypeMiniProgram:
@@ -183,7 +184,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 
                     message.mediaObject = mpObject;
 
-                    [self shareMediaMessage: (WXMediaMessage*)message to:scene];
+                    [self shareMediaMessage: (WXMediaMessage*)message atScene:scene toUser: user];
                 }];
 
                 break;
@@ -194,23 +195,31 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     }
 }
 
-- (void)shareTextMessage: (NSString*)text to: (int)scene {
+- (void)shareTextMessage: (NSString*)text
+                 atScene: (int)scene
+                  toUser: (NSString*)user
+{
     SendMessageToWXReq* req = [SendMessageToWXReq new];
 
     req.bText = YES;
     req.scene = scene;
     req.text = text;
+    req.toUserOpenId = user;
 
     [self sendMessageReq:req];
 }
 
-- (void)shareMediaMessage: (WXMediaMessage*)message to: (int)scene {
+- (void)shareMediaMessage: (WXMediaMessage*)message
+                  atScene: (int)scene
+                   toUser: (NSString*)user
+{
 
     SendMessageToWXReq* req = [SendMessageToWXReq new];
 
     req.bText = NO;
     req.scene = scene;
     req.message = message;
+    req.toUserOpenId = user;
 
     [self sendMessageReq:req];
 }
@@ -250,6 +259,9 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
 RCT_EXPORT_METHOD(pay: (NSDictionary*)data :(RCTPromiseResolveBlock)resolve :(RCTPromiseRejectBlock)reject)
 {
     PayReq* req = [PayReq new];
+    
+    BC_READ_ASSIGN(req, openID);
+    
     BC_READ_ASSIGN(req, partnerId);
     BC_READ_ASSIGN(req, prepayId);
     BC_READ_ASSIGN(req, nonceStr);
@@ -274,6 +286,9 @@ RCT_EXPORT_METHOD(launchMiniProgram: (NSDictionary*)data
                   :(RCTPromiseRejectBlock)reject)
 {
     WXLaunchMiniProgramReq* req = [WXLaunchMiniProgramReq new];
+    
+    BC_READ_ASSIGN(req, openID);
+    
     BC_READ_ASSIGN(req, userName);
     BC_READ_ASSIGN(req, path);
     req.miniProgramType = [data[@"miniProgramType"] unsignedIntegerValue];
@@ -294,6 +309,9 @@ RCT_EXPORT_METHOD(sendAuthRequest: (NSDictionary*)data
                   :(RCTPromiseRejectBlock)reject)
 {
     SendAuthReq* req = [SendAuthReq new];
+    
+    BC_READ_ASSIGN(req, openID);
+    
     BC_READ_ASSIGN(req, state);
     BC_READ_ASSIGN(req, scope);
 

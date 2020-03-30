@@ -11,6 +11,10 @@ export enum WXShareScene {
    *  收藏
    **/
   WXSceneFavorite,
+  /**
+   *  指定联系人（须填写 openUserId ）
+   */
+  WXSceneSpecifiedSession,
 }
 
 export enum WXShareType {
@@ -37,8 +41,24 @@ export enum WXMiniProgramType {
   WXMiniProgramTypePreview,
 }
 
-export interface ShareBaseReq {
+export interface WXBaseReq {
+  /**
+   * @iOS 由用户微信号和AppID组成的唯一标识，需要校验微信用户是否换号登录时填写
+   * @Android 不明
+   */
+  openId?: string;
+  /**
+   * @Android
+   */
+  transaction?: string;
+}
+
+export interface ShareBaseReq extends WXBaseReq {
   scene: WXShareScene;
+  /**
+   * 接收消息的用户的openid。仅在 scene 为 WXSceneSpecifiedSession 时生效。
+   */
+  userOpenId?: string;
 }
 
 export interface ShareMediaReq extends ShareBaseReq {
@@ -94,7 +114,7 @@ export type WXShareReq =
   | ShareWebReq
   | ShareMiniProgramReq;
 
-export interface WXPayReq {
+export interface WXPayReq extends WXBaseReq {
   /** 商家向财付通申请的商家id */
   partnerId: string;
   /** 预支付订单 */
@@ -109,13 +129,13 @@ export interface WXPayReq {
   sign: string;
 }
 
-export interface WXLaunchMiniProgramReq {
+export interface WXLaunchMiniProgramReq extends WXBaseReq {
   userName: string;
   path?: string;
   miniProgramType: WXMiniProgramType;
 }
 
-export interface WXSendAuthReq {
+export interface WXSendAuthReq extends WXBaseReq {
   /**
    * 外部应用请求的权限范围
    * **注意：限制长度不超过1KB**
@@ -147,22 +167,22 @@ export interface WXBaseResp {
   errCode: WXErrCode;
   errStr?: string;
   /**
-   * @platform Android
+   * @Android
    */
   openId?: string;
   /**
-   * @platform Android
+   * @Android
    */
   transaction?: string;
 }
 
 export interface WXShareResp extends WXBaseResp {
   /**
-   * @platform iOS
+   * @iOS
    */
   lang?: string;
   /**
-   * @platform iOS
+   * @iOS
    */
   country?: string;
 }
@@ -172,6 +192,14 @@ export interface WXPayResp extends WXBaseResp {
    * 微信终端返回给第三方的关于支付结果的结构体
    */
   returnKey?: string;
+  /**
+   * @Android
+   */
+  prepayId?: string;
+  /**
+   * @Android
+   */
+  extData?: string;
 }
 
 export interface WXLaunchMiniProgramResp extends WXBaseResp {
@@ -191,11 +219,11 @@ export interface WXSendAuthResp extends WXBaseResp {
   country?: string;
   /**
    * 只用在 scope:[snsapi_wxaapp_info], 授权成功为true, 否则为false
-   * @platform Android
+   * @Android
    */
   authResult?: boolean;
   /**
-   * @platform Android
+   * @Android
    */
   url?: string;
 }
