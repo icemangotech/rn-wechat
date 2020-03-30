@@ -15,6 +15,7 @@ import com.facebook.imagepipeline.image.CloseableImage
 import com.facebook.imagepipeline.request.ImageRequestBuilder
 import com.facebook.react.bridge.*
 import com.tencent.mm.opensdk.constants.Build
+import com.tencent.mm.opensdk.constants.ConstantsAPI
 import com.tencent.mm.opensdk.modelbase.BaseReq
 import com.tencent.mm.opensdk.modelbase.BaseResp
 import com.tencent.mm.opensdk.modelmsg.*
@@ -313,7 +314,8 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
     map.putString("openId", baseResp.openId)
     map.putString("transaction", baseResp.transaction)
     map.putInt("type", baseResp.type)
-    if (baseResp is SendMessageToWX.Resp) {
+
+    if (baseResp.type == ConstantsAPI.COMMAND_SENDMESSAGE_TO_WX) {
       mSendMessagePromise?.resolve(map)
     }
   }
