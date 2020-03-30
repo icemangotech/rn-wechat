@@ -176,7 +176,7 @@ class BCWechatModule(private val reactContext: ReactApplicationContext) : ReactC
   @ReactMethod
   fun launchMiniProgram(data: ReadableMap, promise: Promise) {
     val req = WXLaunchMiniProgram.Req()
-    
+
     req.transaction = extractString(data, "transaction")
     req.openId = extractString(data, "openId")
 
