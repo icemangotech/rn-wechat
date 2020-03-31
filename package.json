@@ -3,12 +3,14 @@
   "title": "React Native Wechat",
   "version": "0.0.2",
   "description": "Another react native bridge for WechatSDK",
-  "main": "src/index.ts",
+  "main": "bin/index.js",
+  "types": "bin/index.d.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "commit": "git-cz",
     "release": "standard-version",
-    "lint": "eslint . --ext .ts,.tsx"
+    "lint": "eslint ./src --fix --ext .ts,.tsx",
+    "build": "tsc; eslint ./bin --fix --ext .ts,.js"
   },
   "repository": {
     "type": "git",
