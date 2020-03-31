@@ -96,7 +96,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     NSString* thumbnailUrl = data[@"thumbUrl"];
 
     if (thumbnailUrl.length) {
-        [self loadImageFromURLString:thumbnailUrl completionBlock:^(NSError *error, UIImage *image) {
+        [self loadImageFromURLString:thumbnailUrl shouldDownSample:YES completionBlock:^(NSError *error, UIImage *image) {
             [self shareData:data withThumbnail:image];
         }];
     } else {
@@ -121,7 +121,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             case WXShareTypeImage:
             {
                 NSString* imageUrl = data[@"imageUrl"];
-                [self loadImageFromURLString:imageUrl completionBlock:^(NSError *error, UIImage *image) {
+                [self loadImageFromURLString:imageUrl shouldDownSample:NO completionBlock:^(NSError *error, UIImage *image) {
 
                     if (!image) {
                         [self rejectSend:nil :@"Image Content Load Fail" :nil];
@@ -173,7 +173,7 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
             case WXShareTypeMiniProgram:
             {
                 NSString* hdImageUrl = data[@"hdImageUrl"];
-                [self loadImageFromURLString:hdImageUrl completionBlock:^(NSError *error, UIImage *image) {
+                [self loadImageFromURLString:hdImageUrl shouldDownSample:NO completionBlock:^(NSError *error, UIImage *image) {
                     WXMiniProgramObject* mpObject = [WXMiniProgramObject object];
                     BC_READ_ASSIGN(mpObject, webpageUrl);
                     BC_READ_ASSIGN(mpObject, userName);
@@ -248,10 +248,17 @@ RCT_EXPORT_METHOD(shareData: (NSDictionary*)data :(RCTPromiseResolveBlock)resolv
     self.sendResolveBlock = nil;
 }
 
-- (void)loadImageFromURLString: (NSString*)urlString completionBlock:(RCTImageLoaderCompletionBlock)callback {
+- (void)loadImageFromURLString: (NSString*)urlString
+              shouldDownSample: (BOOL)shouldDownSample
+               completionBlock: (RCTImageLoaderCompletionBlock)callback
+{
     NSURL* url = [NSURL URLWithString:urlString];
     NSURLRequest* imageRequest = [NSURLRequest requestWithURL:url];
-    [[self.bridge moduleForName:@"ImageLoader"] loadImageWithURLRequest:imageRequest size:CGSizeMake(100, 100) scale:1 clipped:NO resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil completionBlock:callback];
+    
+    CGSize size = shouldDownSample ? CGSizeMake(100, 100) : CGSizeZero;
+    
+    [[self.bridge moduleForName:@"ImageLoader"] loadImageWithURLRequest:imageRequest size:size scale:1 clipped:!shouldDownSample resizeMode:RCTResizeModeStretch progressBlock:nil partialLoadBlock:nil completionBlock:callback];
+    
 }
 
 #pragma mark - Pay
