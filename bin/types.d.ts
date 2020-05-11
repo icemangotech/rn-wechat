@@ -109,7 +109,7 @@ export interface WXPayReq extends WXBaseReq {
   /** 随机串，防重发 */
   nonceStr: string;
   /** 时间戳，防重发 */
-  timeStamp: number;
+  timeStamp: string;
   /** 商家根据财付通文档填写的数据和签名 */
   package: string;
   /** 商家根据微信开放平台文档对数据做的签名 */
