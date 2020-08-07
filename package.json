@@ -1,7 +1,7 @@
 {
   "name": "@phecdas/rn-wechat",
   "title": "React Native Wechat",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Another react native bridge for WechatSDK",
   "main": "bin/index.js",
   "types": "bin/index.d.ts",
