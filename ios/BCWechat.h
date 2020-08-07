@@ -1,7 +1,11 @@
 #import <React/RCTBridgeModule.h>
 #import <React/RCTEventEmitter.h>
 #import <React/RCTLinkingManager.h>
+#if __has_include(<React/RCTImageLoader.h>)
+#import <React/RCTImageLoader.h>
+#else
 #import <React/RCTImageLoaderProtocol.h>
+#endif
 #import "WXApi.h"
 #import "WXApiObject.h"
 
